@@ -79,3 +79,6 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+// gör Program synlig för WebApplicationFactory i testprojektet
+public partial class Program;
