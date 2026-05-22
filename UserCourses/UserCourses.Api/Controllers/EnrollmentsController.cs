@@ -56,4 +56,22 @@ public class EnrollmentsController(UserCoursesDbContext db) : ControllerBase
         await db.SaveChangesAsync();
         return NoContent();
     }
+
+    // mina kurser — userId från URL tills KAN-23 (JWT) sätter inloggad användare
+    [HttpGet("/users/{userId:guid}/enrollments")]
+    public async Task<IActionResult> GetByUser(Guid userId)
+    {
+        var enrollments = await db.UserCourses
+            .Where(uc => uc.UserId == userId)
+            .Select(uc => new UserCourseResponse(
+                uc.Id,
+                uc.UserId,
+                uc.CourseId,
+                uc.Role,
+                uc.Status,
+                uc.EnrolledAt))
+            .ToListAsync();
+
+        return Ok(enrollments);
+    }
 }
