@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using UserCourses.Api.Contracts;
@@ -7,6 +8,7 @@ using UserCourses.Api.Infrastructure;
 namespace UserCourses.Api.Controllers;
 
 [ApiController]
+[Authorize(Roles = "Instructor,Admin")]
 public class InstructorsController(UserCoursesDbContext db) : ControllerBase
 {
     [HttpPost("/courses/{courseId:guid}/instructors")]

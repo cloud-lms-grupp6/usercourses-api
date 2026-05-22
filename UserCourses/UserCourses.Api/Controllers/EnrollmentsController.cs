@@ -1,3 +1,5 @@
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using UserCourses.Api.Contracts;
@@ -8,16 +10,19 @@ namespace UserCourses.Api.Controllers;
 
 [ApiController]
 [Route("enrollments")]
+[Authorize]
 public class EnrollmentsController(UserCoursesDbContext db) : ControllerBase
 {
-    // hårdkodad tills KAN-23 (JWT) ger riktig användare
-    private static readonly Guid DevUserId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+    private Guid CurrentUserId =>
+        Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
     [HttpPost]
     public async Task<IActionResult> Enroll(EnrollRequest request)
     {
+        var userId = CurrentUserId;
+
         bool alreadyEnrolled = await db.UserCourses.AnyAsync(uc =>
-            uc.UserId == DevUserId &&
+            uc.UserId == userId &&
             uc.CourseId == request.CourseId &&
             uc.Role == UserCourseRole.Student);
 
@@ -26,7 +31,7 @@ public class EnrollmentsController(UserCoursesDbContext db) : ControllerBase
 
         var enrollment = new UserCourse
         {
-            UserId = DevUserId,
+            UserId = userId,
             CourseId = request.CourseId,
             Role = UserCourseRole.Student
         };
@@ -57,10 +62,14 @@ public class EnrollmentsController(UserCoursesDbContext db) : ControllerBase
         return NoContent();
     }
 
-    // mina kurser — userId från URL tills KAN-23 (JWT) sätter inloggad användare
+    // mina kurser, student ser bara sina egna (KAN-23)
     [HttpGet("/users/{userId:guid}/enrollments")]
     public async Task<IActionResult> GetByUser(Guid userId)
     {
+        bool privileged = User.IsInRole("Instructor") || User.IsInRole("Admin");
+        if (!privileged && userId != CurrentUserId)
+            return Forbid();
+
         var enrollments = await db.UserCourses
             .Where(uc => uc.UserId == userId)
             .Select(uc => new UserCourseResponse(
