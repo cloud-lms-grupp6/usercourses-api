@@ -27,6 +27,14 @@ builder.Services.AddOpenApi(options =>
             In = ParameterLocation.Header,
             Description = "Klistra in JWT från /dev/token"
         };
+
+        document.Security =
+        [
+            new OpenApiSecurityRequirement
+            {
+                [new OpenApiSecuritySchemeReference("Bearer", document)] = []
+            }
+        ];
         return Task.CompletedTask;
     });
 });
