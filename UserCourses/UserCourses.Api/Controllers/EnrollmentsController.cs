@@ -74,4 +74,22 @@ public class EnrollmentsController(UserCoursesDbContext db) : ControllerBase
 
         return Ok(enrollments);
     }
+
+    // deltagare på en kurs
+    [HttpGet("/courses/{courseId:guid}/enrollments")]
+    public async Task<IActionResult> GetByCourse(Guid courseId)
+    {
+        var enrollments = await db.UserCourses
+            .Where(uc => uc.CourseId == courseId)
+            .Select(uc => new UserCourseResponse(
+                uc.Id,
+                uc.UserId,
+                uc.CourseId,
+                uc.Role,
+                uc.Status,
+                uc.EnrolledAt))
+            .ToListAsync();
+
+        return Ok(enrollments);
+    }
 }
